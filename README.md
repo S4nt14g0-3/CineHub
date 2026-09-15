@@ -9,7 +9,7 @@ Sistema de Gestion de Cine
 Todos los archivos estan sujetos a cambios 
 
 
-Esquema de la base de datos
+# Esquema de la base de datos
 
 |Tabla|Columna|Tipo de Dato|Permite Nulo|
 |-----|-------|------------|------------|
