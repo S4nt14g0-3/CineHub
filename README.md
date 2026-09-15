@@ -1,4 +1,7 @@
-# Proyecto_Progra CineHub
+# CineHub
+
+Proyecto de Programacion 5
+
 
 Sistema de Gestion de Cine
 
