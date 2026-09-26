@@ -7,6 +7,7 @@ const peliculasRoutes = require('./routes/peliculasRoutes');
 const authRoutes = require('./routes/authRoutes');
 const funcionesRoutes = require('./routes/funcionesRoutes');
 const comprasRoutes = require('./routes/comprasRoutes');
+const asientosRoutes = require('./routes/asientosRoutes');
 
 
 
@@ -18,7 +19,7 @@ app.use('/api/peliculas', peliculasRoutes);
 app.use('/api/funciones', funcionesRoutes);
 app.use('/api/compras', comprasRoutes);
 app.use('/api/auth', authRoutes);
-
+app.use('/api/asientos', asientosRoutes);
 // Endpoint de prueba para verificar conexión con las tablas
 app.get('/api/test-db', async (req, res) => {
   try {

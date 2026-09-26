@@ -5,11 +5,16 @@ const realizarCompra = async (req, res) => {
   const client = await pool.connect();
 
   try {
-    const { usuario_id, funcion_id, asientos_ids, productos_dulceria, metodo_pago } = req.body;
+    // Permitir tanto 'asientos_ids' como 'asientos' para evitar conflictos con el frontend
+    const { usuario_id, funcion_id, productos_dulceria, metodo_pago } = req.body;
+    const asientos_ids = req.body.asientos_ids || req.body.asientos;
 
-    if (!asientos_ids || asientos_ids.length === 0) {
+    if (!asientos_ids || !Array.isArray(asientos_ids) || asientos_ids.length === 0) {
       return res.status(400).json({ error: 'Debes seleccionar al menos un asiento.' });
     }
+
+    // Asegurar un usuario por defecto (ID 1) si el frontend no lo envía
+    const usuarioFinal = usuario_id || 1;
 
     // Iniciar transacción SQL para garantizar integridad de la compra
     await client.query('BEGIN');
@@ -38,41 +43,24 @@ const realizarCompra = async (req, res) => {
     const compraRes = await client.query(
       `INSERT INTO compras (usuario_id, total, metodo_pago, fecha_compra)
        VALUES ($1, $2, $3, NOW()) RETURNING id, fecha_compra`,
-      [usuario_id, totalCompra, metodo_pago || 'Tarjeta']
+      [usuarioFinal, totalCompra, metodo_pago || 'Tarjeta']
     );
     const compraId = compraRes.rows[0].id;
 
-    // 4. Crear los Tickets para cada asiento
-    const ticketsCreados = [];
-    for (const asientoId of asientos_ids) {
-      // Generar un código único de ticket para la entrada
-      const codigoTicket = `TICK-${compraId}-${funcion_id}-${asientoId}-${Math.floor(1000 + Math.random() * 9000)}`;
-      
-      const ticketRes = await client.query(
-        `INSERT INTO tickets (compra_id, funcion_id, asiento_id, codigo_ticket, precio)
-         VALUES ($1, $2, $3, $4, $5) RETURNING id, codigo_ticket`,
-        [compraId, funcion_id, asientoId, codigoTicket, precioBoleta]
-      );
-      ticketsCreados.push(ticketRes.rows[0]);
-    }
-
-    // 5. Procesar productos de Dulcería (si se incluyeron)
-    if (productos_dulceria && productos_dulceria.length > 0) {
-      for (const item of productos_dulceria) {
-        // item = { producto_id: 1, cantidad: 2, precio_unitario: 22000 }
-        const subtotal = item.cantidad * item.precio_unitario;
-        totalCompra += subtotal;
-
-        await client.query(
-          `INSERT INTO detalle_compras_dulceria (compra_id, producto_id, cantidad, precio_unitario)
-           VALUES ($1, $2, $3, $4)`,
-          [compraId, item.producto_id, item.cantidad, item.precio_unitario]
+  // 4. Crear los Tickets para cada asiento
+      const ticketsCreados = [];
+      for (const asientoId of asientos_ids) {
+        // Generar el código para el QR del ticket
+        const codigoQR = `TICK-${compraId}-${funcion_id}-${asientoId}-${Math.floor(1000 + Math.random() * 9000)}`;
+        
+        const ticketRes = await client.query(
+          `INSERT INTO tickets (compra_id, funcion_id, asiento_id, precio, codigo_qr, validado)
+          VALUES ($1, $2, $3, $4, $5, $6) 
+          RETURNING id, codigo_qr`,
+          [compraId, funcion_id, asientoId, precioBoleta, codigoQR, false]
         );
+        ticketsCreados.push(ticketRes.rows[0]);
       }
-
-      // Actualizar el total final de la compra con la dulcería
-      await client.query('UPDATE compras SET total = $1 WHERE id = $2', [totalCompra, compraId]);
-    }
 
     // Confirmar la transacción
     await client.query('COMMIT');
