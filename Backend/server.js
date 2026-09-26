@@ -4,12 +4,20 @@ const pool = require('./config/db');
 require('dotenv').config();
 
 const peliculasRoutes = require('./routes/peliculasRoutes');
+const authRoutes = require('./routes/authRoutes');
+const funcionesRoutes = require('./routes/funcionesRoutes');
+const comprasRoutes = require('./routes/comprasRoutes');
+
+
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 app.use('/api/peliculas', peliculasRoutes);
+app.use('/api/funciones', funcionesRoutes);
+app.use('/api/compras', comprasRoutes);
+app.use('/api/auth', authRoutes);
 
 // Endpoint de prueba para verificar conexión con las tablas
 app.get('/api/test-db', async (req, res) => {
