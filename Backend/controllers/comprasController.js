@@ -108,7 +108,7 @@ const getHistorialUsuario = async (req, res) => {
       FROM compras c
       LEFT JOIN tickets t ON t.compra_id = c.id
       WHERE c.usuario_id = $1
-      GROUP BY c.id
+      GROUP BY c.id, c.total, c.fecha_compra, c.metodo_pago
       ORDER BY c.fecha_compra DESC;
     `;
     const result = await pool.query(query, [usuarioId]);
