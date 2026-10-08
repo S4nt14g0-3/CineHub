@@ -20,7 +20,7 @@ CineHub/
 ├── backend/                 # API REST (Express)
 │   ├── config/db.js         # Pool de conexión a PostgreSQL
 │   ├── controllers/         # Lógica de cada recurso
-│   ├── middleware/auth.js   # Verificación de JWT y roles
+│   ├── verificaciones/       # Verificación de JWT y roles
 │   ├── routes/              # Definición de rutas por recurso
 │   ├── scripts/initDb.js    # Ejecuta database/CineHub.sql
 │   ├── .env.example         # Plantilla de variables de entorno
@@ -34,7 +34,7 @@ CineHub/
 │       └── services/        # Servicios por dominio
 ├── database/
 │   ├── CineHub.sql          # Esquema + datos semilla (15 tablas)
-│   └── Cine Hub DER.png     # Diagrama entidad-relación
+│   └── Cine Hub DER.png     # Exportación antigua; el esquema vigente está abajo
 └── docs/                    # PDF del proyecto y mockups de pantallas
 ```
 
@@ -111,38 +111,133 @@ npm run dev                        # inicia en http://localhost:3000
 
 ## 🗄️ Esquema de la base de datos
 
-El DDL completo (con restricciones y datos semilla) está en
-[`database/CineHub.sql`](database/CineHub.sql). Resumen de tablas (15):
+El DDL completo, incluidas las restricciones y los datos semilla, está en
+[`database/CineHub.sql`](database/CineHub.sql). Este diagrama refleja las 15 tablas
+y sus relaciones:
 
-| Tabla | Rol |
-|-------|-----|
-| `roles` | Catálogo de roles (Cliente, Empleado, Administrador) |
-| `usuarios` | Usuarios con `password_hash` y rol |
-| `auditoria_accesos` | Registro de ingresos (exitosos/fallidos) con IP |
-| `cines` / `salas` / `asientos` | Sedes, salas y sus asientos |
-| `clasificaciones` / `generos` / `pelicula_generos` | Catálogos y relación N:M |
-| `peliculas` | Películas de la cartelera |
-| `funciones` | Funciones (película + sala + fecha + precio) |
-| `compras` / `tickets` | Encabezado de compra y boletas (con `codigo_ticket`) |
-| `productos_dulceria` / `detalle_compras_dulceria` | Dulcería y su detalle |
+```mermaid
+erDiagram
+    roles ||--o{ usuarios : asigna
+    usuarios ||--o{ auditoria_accesos : registra
+    cines ||--o{ salas : contiene
+    salas ||--o{ asientos : tiene
+    clasificaciones ||--o{ peliculas : clasifica
+    peliculas ||--o{ pelicula_generos : tiene
+    generos ||--o{ pelicula_generos : categoriza
+    peliculas ||--o{ funciones : programa
+    salas ||--o{ funciones : presenta
+    usuarios ||--o{ compras : realiza
+    compras ||--o{ tickets : incluye
+    funciones ||--o{ tickets : corresponde
+    asientos ||--o{ tickets : reserva
+    compras ||--o{ detalle_compras_dulceria : incluye
+    productos_dulceria ||--o{ detalle_compras_dulceria : aparece_en
 
-| Tabla | Columna | Tipo | Nulo |
-|-------|---------|------|------|
-| asientos | id, sala_id, fila, columna, tipo | integer/varchar | solo `tipo` |
-| auditoria_accesos | id, usuario_id, fecha_ingreso, ip_origen, exitoso | integer/timestamp/varchar/boolean | fecha, ip, exitoso |
-| cines | id, nombre, direccion, ciudad | integer/varchar | NO |
-| clasificaciones | id, codigo, descripcion | integer/varchar/text | descripcion |
-| compras | id, usuario_id, fecha_compra, monto_total, estado | integer/timestamp/numeric/varchar | fecha, estado |
-| detalle_compras_dulceria | id, compra_id, producto_id, cantidad, precio_unitario | integer/numeric | NO |
-| funciones | id, pelicula_id, sala_id, fecha_hora, precio_base | integer/timestamp/numeric | NO |
-| generos | id, nombre | integer/varchar | NO |
-| pelicula_generos | pelicula_id, genero_id | integer | NO |
-| peliculas | id, clasificacion_id, titulo, duracion_minutos, sinopsis, poster_url | integer/varchar/text | sinopsis, poster_url |
-| productos_dulceria | id, nombre, precio, stock | integer/varchar/numeric | NO |
-| roles | id, nombre, descripcion | integer/varchar/text | descripcion |
-| salas | id, cine_id, nombre, capacidad, tipo_sala | integer/varchar | tipo_sala |
-| tickets | id, compra_id, funcion_id, asiento_id, precio, codigo_ticket, validado | integer/numeric/varchar/boolean | codigo_ticket, validado |
-| usuarios | id, rol_id, nombre, email, password_hash, telefono, creado_en | integer/varchar/timestamp | telefono, creado_en |
+    roles {
+        int id PK
+        varchar nombre UK
+        text descripcion
+    }
+    usuarios {
+        int id PK
+        int rol_id FK
+        varchar nombre
+        varchar email UK
+        varchar password_hash
+        varchar telefono
+        timestamp creado_en
+    }
+    auditoria_accesos {
+        int id PK
+        int usuario_id FK
+        timestamp fecha_ingreso
+        varchar ip_origen
+        boolean exitoso
+    }
+    cines {
+        int id PK
+        varchar nombre
+        varchar direccion
+        varchar ciudad
+    }
+    salas {
+        int id PK
+        int cine_id FK
+        varchar nombre
+        int capacidad
+        varchar tipo_sala
+    }
+    asientos {
+        int id PK
+        int sala_id FK
+        varchar fila
+        int columna
+        varchar tipo
+    }
+    clasificaciones {
+        int id PK
+        varchar codigo UK
+        text descripcion
+    }
+    generos {
+        int id PK
+        varchar nombre UK
+    }
+    peliculas {
+        int id PK
+        int clasificacion_id FK
+        varchar titulo
+        int duracion_minutos
+        text sinopsis
+        varchar poster_url
+    }
+    pelicula_generos {
+        int pelicula_id PK, FK
+        int genero_id PK, FK
+    }
+    funciones {
+        int id PK
+        int pelicula_id FK
+        int sala_id FK
+        timestamp fecha_hora
+        numeric precio_base
+    }
+    compras {
+        int id PK
+        int usuario_id FK
+        timestamp fecha_compra
+        numeric monto_total
+        varchar estado
+    }
+    tickets {
+        int id PK
+        int compra_id FK
+        int funcion_id FK
+        int asiento_id FK
+        numeric precio
+        varchar codigo_ticket UK
+        boolean validado
+    }
+    productos_dulceria {
+        int id PK
+        varchar nombre
+        numeric precio
+        int stock
+    }
+    detalle_compras_dulceria {
+        int id PK
+        int compra_id FK
+        int producto_id FK
+        int cantidad
+        numeric precio_unitario
+    }
+```
+
+`PK` indica clave primaria, `FK` clave foránea y `UK` valor único. La tabla
+`pelicula_generos` usa una clave primaria compuesta (`pelicula_id`, `genero_id`);
+`tickets` también impide vender dos veces el mismo asiento para una función con
+la restricción única (`funcion_id`, `asiento_id`). El esquema SQL es la fuente
+de verdad para restricciones, valores predeterminados y tipos con longitud o precisión.
 
 ## 📝 Notas
 
