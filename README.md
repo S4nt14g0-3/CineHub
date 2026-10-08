@@ -1,7 +1,7 @@
 # 🎬 CineHub Sur — Sistema de Gestión de Cine
 
 Proyecto de **Programación 5**. Aplicación web para gestionar un cine: cartelera,
-reserva de asientos, dulcería, venta de boletas, validación de tickets por QR,
+reserva de asientos, dulcería, venta de boletas, validación de tickets,
 reportes y administración por roles.
 
 ## 🧱 Tecnologías
