@@ -26,3 +26,13 @@ yarn-error.log*
 Thumbs.db
 .vscode/
 .idea/
+
+# Freebuff (herramienta del agente: no subir al repo)
+.freebuff/
+freebuff/
+*.freebuff
+.freebuff-*
+
+# Base de datos local y volcados
+*.sql.gz
+*.dump

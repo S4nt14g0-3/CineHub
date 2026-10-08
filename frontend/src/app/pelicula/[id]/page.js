@@ -1,11 +1,16 @@
 'use client';
+
+// ============================================================
+// Detalle de una película: póster, sinopsis, funciones y acceso
+// a la selección de asientos.
+// ============================================================
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import { getPeliculaById } from '@/services/peliculasServices';
 
 export default function PeliculaDetallePage({ params }) {
-  // Desempaquetar los parámetros dinámicos de la URL usando React.use()
+  // En Next 16 los params de ruta llegan como Promise: se desempaquetan con use().
   const resolvedParams = use(params);
   const peliculaId = resolvedParams.id;
   const router = useRouter();
@@ -55,7 +60,6 @@ export default function PeliculaDetallePage({ params }) {
 
   const handleContinuarASeleccionAsientos = () => {
     if (!funcionSeleccionada) return;
-    // Navegar a la pantalla de reserva enviando el ID de la función
     router.push(`/reserva/${funcionSeleccionada.id}`);
   };
 
@@ -73,10 +77,10 @@ export default function PeliculaDetallePage({ params }) {
         </button>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10 items-start">
-          {/* POSTER GRANDE */}
+          {/* PÓSTER GRANDE */}
           <div className="rounded-2xl overflow-hidden border border-slate-800 bg-[#16181d] shadow-2xl">
             <img
-              src={pelicula.imagen_url || 'https://via.placeholder.com/400x600'}
+              src={pelicula.poster_url || 'https://via.placeholder.com/400x600'}
               alt={pelicula.titulo}
               className="w-full h-auto object-cover"
             />
@@ -84,18 +88,20 @@ export default function PeliculaDetallePage({ params }) {
 
           {/* DETALLES Y FUNCIONES */}
           <div className="md:col-span-2 space-y-8">
-            {/* Header / Badges */}
+            {/* Encabezado / Badges */}
             <div className="space-y-3">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <span className="bg-amber-500/10 text-amber-400 text-xs font-semibold px-3 py-1 rounded-full border border-amber-500/20">
-                  {pelicula.clasificacion || 'PG-13'}
-                </span>
-                <span className="bg-slate-800 text-amber-400 text-xs font-bold px-2.5 py-1 rounded-md border border-slate-700 flex items-center gap-1">
-                  ★ {pelicula.rating || '8.0'}
+                  {pelicula.clasificacion || 'TP'}
                 </span>
                 <span className="text-slate-400 text-xs font-medium">
-                  ⏱️ {pelicula.duracion_minutos ? `${pelicula.duracion_minutos} min` : '120 min'}
+                  ⏱️ {pelicula.duracion_minutos ? `${pelicula.duracion_minutos} min` : 'Duración N/D'}
                 </span>
+                {pelicula.genero && (
+                  <span className="text-slate-400 text-xs font-medium">
+                    🎬 {pelicula.genero}
+                  </span>
+                )}
               </div>
 
               <h1 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight">
@@ -107,7 +113,7 @@ export default function PeliculaDetallePage({ params }) {
               </p>
             </div>
 
-            {/* SECCIÓN DE HORARIOS Y FUNCIONES */}
+            {/* SECCIÓN DE FUNCIONES */}
             <div className="bg-[#13151a] p-6 rounded-2xl border border-slate-800/80 space-y-6">
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
                 📅 Selecciona una Función
@@ -118,8 +124,14 @@ export default function PeliculaDetallePage({ params }) {
                   {pelicula.funciones.map((func) => {
                     const isSelected = funcionSeleccionada?.id === func.id;
                     const fecha = new Date(func.fecha_hora);
-                    const horaFormateada = fecha.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    const fechaFormateada = fecha.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                    const horaFormateada = fecha.toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    });
+                    const fechaFormateada = fecha.toLocaleDateString([], {
+                      month: 'short',
+                      day: 'numeric',
+                    });
 
                     return (
                       <button
@@ -133,20 +145,20 @@ export default function PeliculaDetallePage({ params }) {
                       >
                         <div>
                           <p className="text-xs text-amber-400 font-semibold uppercase tracking-wider">
-                            Sala: {func.sala_nombre || `Sala ${func.sala_id}`}
+                            {func.sala_nombre || `Sala ${func.sala_id}`}
                           </p>
-                          <p className="text-lg font-bold text-white mt-0.5">
-                            {horaFormateada}
-                          </p>
-                          <p className="text-xs text-slate-400">
-                            {fechaFormateada}
-                          </p>
+                          <p className="text-lg font-bold text-white mt-0.5">{horaFormateada}</p>
+                          <p className="text-xs text-slate-400">{fechaFormateada}</p>
                         </div>
                         <div className="text-right">
                           <p className="text-sm font-bold text-white">
-                            ${Number(func.precio_boleta || 12000).toLocaleString('es-CO')}
+                            ${Number(func.precio_boleta || 0).toLocaleString('es-CO')}
                           </p>
-                          <span className={`inline-block w-3 h-3 rounded-full mt-2 ${isSelected ? 'bg-amber-400' : 'bg-slate-700'}`} />
+                          <span
+                            className={`inline-block w-3 h-3 rounded-full mt-2 ${
+                              isSelected ? 'bg-amber-400' : 'bg-slate-700'
+                            }`}
+                          />
                         </div>
                       </button>
                     );
@@ -158,7 +170,7 @@ export default function PeliculaDetallePage({ params }) {
                 </p>
               )}
 
-              {/* Botón Acción para ir a Asientos */}
+              {/* Acción para ir a Asientos */}
               <div className="pt-4 border-t border-slate-800 flex justify-end">
                 <button
                   disabled={!funcionSeleccionada}
@@ -169,7 +181,9 @@ export default function PeliculaDetallePage({ params }) {
                       : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700/50'
                   }`}
                 >
-                  {funcionSeleccionada ? 'Seleccionar Asientos →' : 'Selecciona una función para continuar'}
+                  {funcionSeleccionada
+                    ? 'Seleccionar Asientos →'
+                    : 'Selecciona una función para continuar'}
                 </button>
               </div>
             </div>
@@ -179,3 +193,10 @@ export default function PeliculaDetallePage({ params }) {
     </div>
   );
 }
+
+/* ============================================================
+   QUÉ SABER DE ESTE ARCHIVO
+   - El backend devuelve las funciones ya filtradas a solo futuras.
+   - Cada función trae: id, fecha_hora, precio_boleta, sala_nombre, cine_nombre.
+   - Se usa `poster_url` (no `imagen_url`) para el póster.
+   ============================================================ */

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import PeliculaCard from '@/components/PeliculaCard';
+import SkeletonPelicula from '@/components/SkeletonPelicula';
 import { getPeliculas } from '@/services/peliculasServices';
 
 const GENEROS = [
@@ -38,14 +39,19 @@ export default function Home() {
 
       <main className="max-w-7xl mx-auto px-6 py-12 flex-1 w-full">
         {/* HERO SECTION */}
-        <section className="mb-12 text-left">
-          <span className="inline-block bg-amber-500/10 text-amber-400 text-xs font-semibold px-3 py-1 rounded-full border border-amber-500/20 mb-4">
+        <section className="relative mb-14 text-left">
+          {/* Glow sutil de fondo */}
+          <div className="pointer-events-none absolute -top-20 -left-20 h-80 w-80 rounded-full bg-amber-500/10 blur-3xl" aria-hidden="true" />
+
+          <span className="relative inline-block bg-amber-500/10 text-amber-400 text-xs font-semibold px-3 py-1 rounded-full border border-amber-500/20 mb-5">
             🍿 En Cartelera Esta Semana
           </span>
-          <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight max-w-2xl leading-tight">
-            Reserva tu lugar para las mejores películas
+          <h1 className="relative text-4xl md:text-5xl font-extrabold tracking-tight max-w-2xl leading-tight">
+            <span className="bg-gradient-to-r from-white to-amber-200/80 bg-clip-text text-transparent">
+              Reserva tu lugar para las mejores películas
+            </span>
           </h1>
-          <p className="text-slate-400 mt-3 text-base max-w-xl">
+          <p className="relative text-slate-400 mt-4 text-base max-w-xl">
             Explora las funciones de la semana, consulta los detalles y asegura los mejores asientos en pocos pasos.
           </p>
         </section>
@@ -87,7 +93,11 @@ export default function Home() {
         {/* CATALOGO DE PELICULAS */}
         <section>
           {loading ? (
-            <div className="text-center py-20 text-slate-500">Cargando cartelera...</div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+              {Array.from({ length: 10 }).map((_, i) => (
+                <SkeletonPelicula key={i} />
+              ))}
+            </div>
           ) : peliculasFiltradas.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
               {peliculasFiltradas.map((pelicula) => (
@@ -104,3 +114,10 @@ export default function Home() {
     </div>
   );
 }
+/* ============================================================
+   QUÉ SABER DE ESTE ARCHIVO
+   - Pantalla de cartelera: lista las películas y filtra por texto y género.
+   - El filtro es local (no vuelve a llamar a la API en cada tecla).
+   - Los géneros disponibles se toman de la constante GENEROS de arriba.
+   - `pelicula.genero` llega como texto "Acción, Aventura".
+   ============================================================ */

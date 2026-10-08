@@ -1,45 +1,47 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+// ============================================================
+// Servicios de reserva: mapa de asientos y creación de compra.
+// ============================================================
+import { api } from '@/lib/api';
 
-// Obtener la información de la función y el estado actual de las sillas
+// Obtiene la info de la función y el estado actual de sus asientos.
 export const getAsientosFuncion = async (funcionId) => {
   try {
-    const response = await fetch(`${API_URL}/asientos/funcion/${funcionId}`);
-    if (!response.ok) throw new Error('Error al obtener asientos de la función');
-    return await response.json();
+    return await api.get(`/asientos/funcion/${funcionId}`);
   } catch (error) {
-    console.error('Error getAsientosFuncion:', error);
+    console.error('Error al obtener asientos de la función:', error);
     return null;
   }
 };
 
-// Crear la compra / reserva de boletas
+// Crea la compra de boletas. Requiere sesión iniciada (envía el token).
+// Lanza el error del backend para poder mostrar el motivo exacto.
 export const crearCompra = async (datosCompra) => {
+  return api.postAuth('/compras', datosCompra);
+};
+
+// Historial de compras de un usuario (Cliente solo puede ver el suyo).
+export const getHistorialCompras = async (usuarioId) => {
   try {
-    const response = await fetch(`${API_URL}/compras`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(datosCompra),
-    });
-
-    if (!response.ok) {
-      // Intentar leer la respuesta como texto para no perder detalles
-      const textResponse = await response.text();
-      let errorData = {};
-      try {
-        errorData = JSON.parse(textResponse);
-      } catch (e) {
-        console.error('La API respondió con texto/HTML no JSON:', textResponse);
-      }
-
-      console.error('Detalle exacto devuelto por la API:', errorData);
-      throw new Error(errorData.error || errorData.detalle || 'Error al procesar la compra');
-    }
-
-    return await response.json();
+    return await api.getAuth(`/compras/usuario/${usuarioId}`);
   } catch (error) {
-    console.error('Error crearCompra:', error);
-    throw error;
+    console.error('Error al obtener el historial:', error);
+    return [];
   }
 };
+
+// Detalle de una compra: datos, tickets con QR y productos de dulcería.
+export const getCompraDetalle = async (compraId) => {
+  try {
+    return await api.getAuth(`/compras/${compraId}/detalle`);
+  } catch (error) {
+    console.error('Error al obtener el detalle de la compra:', error);
+    return null;
+  }
+};
+
+/* ============================================================
+   QUÉ SABER DE ESTE ARCHIVO
+   - getAsientosFuncion apunta a /asientos/funcion/:id (alias del backend).
+   - crearCompra usa postAuth: si no hay sesión, lanza error 401.
+   - El backend exige token en /compras; por eso la reserva redirige a /login.
+   ============================================================ */

@@ -1,1 +1,7 @@
 @import "tailwindcss";
+
+/* ============================================================
+   QUÉ SABER DE ESTE ARCHIVO
+   - Importa Tailwind CSS v4 (configuración vía PostCSS).
+   - Los estilos del proyecto se escriben con clases utilitarias en los JSX.
+   ============================================================ */
